@@ -26,30 +26,32 @@ endif()
 set(PICO_BOARD board)
 list(APPEND PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR})
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
-
 project(ape-audio-synthesizer C CXX ASM)
 
-# Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Add executable. Default name is the project name, version 0.1
+# Super important for u8g2 to prune unused fonts (otherwise 11 MB binary :skull:)
+add_compile_options(-ffast-math -ffunction-sections -fdata-sections)
+add_link_options(-Wl,--gc-sections)
+
+add_subdirectory(lib/u8g2)
 
 add_executable(ape-audio-synthesizer src/main.c )
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")
 pico_set_program_version(ape-audio-synthesizer "0.1")
 
-# Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(ape-audio-synthesizer 0)
 pico_enable_stdio_usb(ape-audio-synthesizer 1)
 
-# Add the standard library to the build
 target_link_libraries(ape-audio-synthesizer
-        pico_stdlib)
+    u8g2 
+    m
+    hardware_spi
+    pico_stdlib
+)
 
-# Add the standard include files to the build
 target_include_directories(ape-audio-synthesizer PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
