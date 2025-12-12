@@ -121,7 +121,7 @@ loop_r:
 
 
 ; I2S Audio Input - Slave or Synchronous with Output Master
-; Inputs must be sequential in order: DIN, BCK, LRCK
+; Inputs must be sequential in order: DIN, DOUT, LRCK, BCK
 ; Must run at same speed of SCK block, or at least 4x BCK.
 ;
 ; NOTE: Set JMP pin to LRCK pin.
@@ -133,27 +133,27 @@ loop_r:
 .program i2s_in_slave
 
 start_sample_l:
-    wait 1 pin 2            ; DIN should be sampled on rising transition of BCK
+    wait 1 pin 3            ; DIN should be sampled on rising transition of BCK
     in pins, 1              ; first "bit" of new frame is actually LSB of last frame, per I2S
     push noblock            ; push however many bits we read into the FIFO
-    wait 0 pin 2            ; ignore first BCK transition after edge
+    wait 0 pin 3            ; ignore first BCK transition after edge
 public_entry_point:
-    wait 0 pin 1            ; wait for L frame to come around before we start
+    wait 0 pin 2            ; wait for L frame to come around before we start
 sample_l:
-    wait 1 pin 2            ; DIN should be sampled on rising transition of BCK
+    wait 1 pin 3            ; DIN should be sampled on rising transition of BCK
     in pins, 1              ; read DIN
-    wait 0 pin 2            ; don't sample more than once per rising edge, wait for next clock
+    wait 0 pin 3            ; don't sample more than once per rising edge, wait for next clock
     jmp pin start_sample_r  ; if LRCK has gone high, we're "done" with this word (1 bit left to read)
     jmp sample_l
 start_sample_r:
-    wait 1 pin 2            ; wait for the last bit of the previous frame
+    wait 1 pin 3            ; wait for the last bit of the previous frame
     in pins, 1              ; first "bit" of new frame is actually LSB of last frame, per I2S
     push noblock            ; push the completed word to the FIFO
-    wait 0 pin 2            ; wait for next clock cycle
+    wait 0 pin 3            ; wait for next clock cycle
 sample_r:
-    wait 1 pin 2
+    wait 1 pin 3
     in pins, 1
-    wait 0 pin 2
+    wait 0 pin 3
     jmp pin sample_r        ; if LRCK is still high, we're still sampling this word
                             ; implicit jmp to start_sample_l: otherwise, start the loop over
 

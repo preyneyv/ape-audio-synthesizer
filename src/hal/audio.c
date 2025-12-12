@@ -18,9 +18,8 @@ static void process_audio(const int32_t *input, int32_t *output, size_t num_fram
     // Just copy the input to the output
     for (size_t i = 0; i < num_frames * 2; i++)
     {
-        printf("input[%d] = %08x\n", i, input[i]);
-        output[i] = input[i];
-        // output[i] = 0;
+        // output[i] = input[i];
+        output[i] = 0;
     }
 }
 
@@ -92,8 +91,8 @@ void audio_i2c_setup()
     // write(0x07, 0b11000101);
     // write(0x08, 0b10000000);
 
-    write(0x0b, 0b11000001);
-    // write(0x0b, 0b00000000);
+    // write(0x0b, 0b11000001);
+    write(0x0b, 0b00000000);
     // dac level
     write(0x0c, 0b00000110);
     // adc level
@@ -118,10 +117,6 @@ void audio_i2c_setup()
 
     // wake up with all peripherals
     write(0x17, 0b11101111);
-
-    uint8_t data;
-    read(0x17, &data, 1);
-    printf("Device ID: %02x\n", data);
 }
 
 void audio_init()
