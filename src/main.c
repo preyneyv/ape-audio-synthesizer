@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include <pico/multicore.h>
 #include <hardware/clocks.h>
 
 #include <u8g2.h>
@@ -8,6 +9,8 @@
 #include "hal/encoders.h"
 #include "hal/keys.h"
 #include "hal/audio.h"
+
+#include "synth/synth.h"
 
 void error_trap(const char *msg)
 {
@@ -21,9 +24,21 @@ void error_trap(const char *msg)
         sleep_ms(1000);
 }
 
+void core1_main()
+{
+    audio_init();
+    while (true)
+    {
+        __wfi();
+    }
+}
+
 int main()
 {
     set_sys_clock_hz(SYS_CLOCK_HZ, true);
+
+    multicore_reset_core1();
+    multicore_launch_core1(core1_main);
 
     stdio_init_all();
     sleep_ms(1000);
@@ -41,7 +56,42 @@ int main()
     if (keys_init() != 0)
         error_trap("keys_init");
 
-    audio_init();
+    audio_synth_init(&g_synth, 48000.0f, 1000);
+    g_synth.master_level = q1x15_f(0.5f);
+    audio_synth_operator_config_t config = audio_synth_operator_config_default;
+    config.env = (audio_synth_env_config_t){
+        .a = 2,
+        .d = 50,
+        .s = q1x31_f(0.f), // sustain level
+        .r = 50,
+    };
+    config.freq_mult = 6;
+    config.level = q1x15_f(.4f);
+    audio_synth_operator_set_config(&g_synth.voices[0].ops[0], config);
+    audio_synth_operator_set_config(&g_synth.voices[1].ops[0], config);
+
+    config = audio_synth_operator_config_default;
+    config.env = (audio_synth_env_config_t){
+        .a = 2,
+        .d = 150,
+        .s = q1x31_f(0.f), // sustain level
+        .r = 100,
+    };
+    config.level = q1x15_f(.5f);
+    config.mode = AUDIO_SYNTH_OP_MODE_FREQ_MOD;
+    audio_synth_operator_set_config(&g_synth.voices[0].ops[1], config);
+    audio_synth_operator_set_config(&g_synth.voices[1].ops[1], config);
+
+    audio_synth_enqueue(&g_synth,
+                        &(audio_synth_message_t){
+                            .type = AUDIO_SYNTH_MESSAGE_NOTE_ON,
+                            .data.note_on =
+                                {
+                                    .voice = 0,
+                                    .note_number = 50,
+                                    .velocity = 100,
+                                },
+                        });
 
     uint8_t v[2] = {0, 0};
     while (true)

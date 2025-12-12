@@ -10,24 +10,59 @@
 
 #include "i2s/i2s.h"
 #include "audio.h"
+#include <synth/synth.h>
 
 static __attribute__((aligned(8))) pio_i2s i2s;
 
+static void decimate_48_to_16khz(const int32_t *src, int32_t *dst, size_t num_dst_frames)
+{
+    // simple decimation by averaging every 3 samples
+    for (size_t i = 0; i < num_dst_frames; i++)
+    {
+        dst[i] = (src[i * 3] + src[i * 3 + 1] + src[i * 3 + 2]) / 3;
+    }
+}
+
+static void inflate_16_to_48khz(const int32_t *src, int32_t *dst, size_t num_src_frames)
+{
+    // simple inflation by repeating each sample 3 times
+    for (size_t i = 0; i < num_src_frames; i++)
+    {
+        dst[i * 3] = src[i];
+        dst[i * 3 + 1] = src[i];
+        dst[i * 3 + 2] = src[i];
+    }
+}
+
 static void process_audio(const int32_t *input, int32_t *output, size_t num_frames)
 {
-    int32_t decimated_l;
-    int32_t decimated_r;
-    // Just copy the input to the output
-    for (size_t i = 0; i < num_frames * 2; i += 6)
-    {
-        // output[i] = input[i];
-        // // output[i] = 0;
-        decimated_l = (input[i] + input[i + 2] + input[i + 4]) / 3;
-        decimated_r = (input[i + 1] + input[i + 3] + input[i + 5]) / 3;
+    static int32_t mono_buffer[AUDIO_BUFFER_FRAMES];
+    static int32_t decimated_buffer[AUDIO_BUFFER_FRAMES / 3];
 
-        output[i] = output[i + 2] = output[i + 4] = decimated_l;
-        output[i + 1] = output[i + 3] = output[i + 5] = decimated_r;
+    audio_synth_fill_buffer(&g_synth, mono_buffer, num_frames);
+    decimate_48_to_16khz(mono_buffer, decimated_buffer, num_frames / 3);
+    inflate_16_to_48khz(decimated_buffer, mono_buffer, num_frames / 3);
+
+    for (size_t i = 0; i < num_frames; i++)
+    {
+        // stereo output from mono buffer
+        output[i * 2] = mono_buffer[i] << 16;
+        output[i * 2 + 1] = output[i * 2];
     }
+
+    // int32_t decimated_l;
+    // int32_t decimated_r;
+    // // Just copy the input to the output
+    // for (size_t i = 0; i < num_frames * 2; i += 6)
+    // {
+    //     // output[i] = input[i];
+    //     // // output[i] = 0;
+    //     decimated_l = (input[i] + input[i + 2] + input[i + 4]) / 3;
+    //     decimated_r = (input[i + 1] + input[i + 3] + input[i + 5]) / 3;
+
+    //     output[i] = output[i + 2] = output[i + 4] = decimated_l;
+    //     output[i + 1] = output[i + 3] = output[i + 5] = decimated_r;
+    // }
 }
 
 static void dma_i2s_in_handler(void)
