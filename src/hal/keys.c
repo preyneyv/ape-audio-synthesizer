@@ -6,11 +6,13 @@
 
 #include <utils/bitflags.h>
 
+#include "../config.h"
 #include "keys.h"
 
-#include "../config.h"
-
 key_t g_keys[KEY_COUNT];
+
+uint8_t last_reg;
+uint8_t last_op_write;
 
 // mapping from touch controller key indices to logical order
 const uint8_t key_map[16] = {
@@ -20,27 +22,42 @@ const uint8_t key_map[16] = {
 
 static int read(uint8_t reg, uint8_t *data, size_t len)
 {
+    last_reg = reg;
+    last_op_write = 0;
+    sleep_us(200);
     int ret = i2c_write_blocking_until(
         TOUCH_I2C_PORT, TOUCH_I2C_ADDR, &reg, 1, true,
         make_timeout_time_ms(TOUCH_I2C_TIMEOUT_MS));
     if (ret < 0)
         return ret;
+    last_op_write = 1;
+    sleep_us(200);
     ret = i2c_read_blocking_until(TOUCH_I2C_PORT, TOUCH_I2C_ADDR, data, len, false,
                                   make_timeout_time_ms(TOUCH_I2C_TIMEOUT_MS));
-
     return ret;
 }
 
 static int write(uint8_t reg, const uint8_t *data, size_t len)
 {
+    last_reg = reg;
+    last_op_write = 0;
+    sleep_us(200);
     int ret = i2c_write_blocking_until(
-        TOUCH_I2C_PORT, TOUCH_I2C_ADDR, &reg, 1, true,
+        TOUCH_I2C_PORT, TOUCH_I2C_ADDR, &reg, 1, false,
         make_timeout_time_ms(TOUCH_I2C_TIMEOUT_MS));
     if (ret < 0)
         return ret;
-    ret = i2c_write_blocking_until(TOUCH_I2C_PORT, TOUCH_I2C_ADDR, data, len, false,
-                                   make_timeout_time_ms(TOUCH_I2C_TIMEOUT_MS));
-    return ret;
+    last_op_write = 1;
+
+    for (size_t i = 0; i < len; i++)
+    {
+        sleep_us(200);
+        ret = i2c_write_blocking_until(TOUCH_I2C_PORT, TOUCH_I2C_ADDR, &data[i], 1, false,
+                                       make_timeout_time_ms(TOUCH_I2C_TIMEOUT_MS));
+        if (ret < 0)
+            return ret;
+    }
+    return 0;
 }
 
 int keys_init_controller()
@@ -73,10 +90,7 @@ int keys_init_controller()
     // GPIO direction
     data = 0b00011100;
     if ((ret = write(73, &data, 1)) < 0)
-    {
         return ret;
-    }
-    return 0;
 
     // Set burst repetition
     data = 1;
@@ -127,11 +141,15 @@ int keys_init()
         key->edge = false;
     }
 
-    i2c_init(TOUCH_I2C_PORT, TOUCH_I2C_SPEED);
+    i2c_init(TOUCH_I2C_PORT, 50000);
     gpio_set_function(TOUCH_I2C_PIN_SDA, GPIO_FUNC_I2C);
     gpio_set_function(TOUCH_I2C_PIN_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(TOUCH_I2C_PIN_SDA);
     gpio_pull_up(TOUCH_I2C_PIN_SCL);
+    gpio_set_slew_rate(TOUCH_I2C_PIN_SDA, GPIO_SLEW_RATE_FAST);
+    gpio_set_slew_rate(TOUCH_I2C_PIN_SCL, GPIO_SLEW_RATE_FAST);
+    gpio_set_drive_strength(TOUCH_I2C_PIN_SDA, GPIO_DRIVE_STRENGTH_12MA);
+    gpio_set_drive_strength(TOUCH_I2C_PIN_SCL, GPIO_DRIVE_STRENGTH_12MA);
 
     return keys_init_controller();
 }
@@ -161,13 +179,5 @@ void keys_tick()
         bool pressed = (keys >> i) & 1;
         key->edge = (pressed != key->pressed);
         key->pressed = pressed;
-
-        if (key->edge)
-        {
-            if (key->pressed)
-                printf("Key %d pressed\n", key->idx);
-            else
-                printf("Key %d released\n", key->idx);
-        }
     }
 }

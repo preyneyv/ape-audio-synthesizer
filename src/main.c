@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <pico/stdlib.h>
+#include <hardware/clocks.h>
 
 #include <u8g2.h>
 
 #include "hal/display.h"
 #include "hal/encoders.h"
 #include "hal/keys.h"
+#include "hal/audio.h"
 
 void error_trap(const char *msg)
 {
@@ -21,6 +23,8 @@ void error_trap(const char *msg)
 
 int main()
 {
+    set_sys_clock_hz(SYS_CLOCK_HZ, true);
+
     stdio_init_all();
     sleep_ms(1000);
     printf("hi\n");
@@ -36,6 +40,8 @@ int main()
     encoders_init();
     if (keys_init() != 0)
         error_trap("keys_init");
+
+    audio_init();
 
     uint8_t v[2] = {0, 0};
     while (true)

@@ -42,6 +42,8 @@ add_executable(ape-audio-synthesizer
     src/hal/display.c
     src/hal/encoders.c
     src/hal/keys.c
+    src/hal/audio.c
+    src/hal/i2s/i2s.c
 )
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")
@@ -53,6 +55,7 @@ pico_enable_stdio_usb(ape-audio-synthesizer 1)
 target_link_libraries(ape-audio-synthesizer
     u8g2 
     m
+    hardware_dma
     hardware_pio
     hardware_spi
     hardware_i2c
@@ -63,5 +66,6 @@ target_include_directories(ape-audio-synthesizer PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
 pico_generate_pio_header(ape-audio-synthesizer ${CMAKE_CURRENT_LIST_DIR}/src/hal/encoders.pio)
+pico_generate_pio_header(ape-audio-synthesizer ${CMAKE_CURRENT_LIST_DIR}/src/hal/i2s/i2s.pio)
 
 pico_add_extra_outputs(ape-audio-synthesizer)

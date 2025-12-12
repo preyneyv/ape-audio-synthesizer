@@ -47,7 +47,7 @@ void encoders_tick()
         enc->_last_value = value;
 
         bool pressed = !gpio_get(enc->_pin_press);
-        enc->edge = (pressed && !enc->pressed);
+        enc->edge = (pressed != enc->pressed);
         enc->pressed = pressed;
     }
 }
