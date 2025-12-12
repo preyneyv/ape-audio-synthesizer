@@ -37,7 +37,11 @@ add_link_options(-Wl,--gc-sections)
 
 add_subdirectory(lib/u8g2)
 
-add_executable(ape-audio-synthesizer src/main.c )
+add_executable(ape-audio-synthesizer 
+    src/main.c
+    src/hal/display.c
+    src/hal/encoders.c
+)
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")
 pico_set_program_version(ape-audio-synthesizer "0.1")
@@ -48,6 +52,7 @@ pico_enable_stdio_usb(ape-audio-synthesizer 1)
 target_link_libraries(ape-audio-synthesizer
     u8g2 
     m
+    hardware_pio
     hardware_spi
     pico_stdlib
 )
@@ -55,5 +60,6 @@ target_link_libraries(ape-audio-synthesizer
 target_include_directories(ape-audio-synthesizer PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
+pico_generate_pio_header(ape-audio-synthesizer ${CMAKE_CURRENT_LIST_DIR}/src/hal/encoders.pio)
 
 pico_add_extra_outputs(ape-audio-synthesizer)

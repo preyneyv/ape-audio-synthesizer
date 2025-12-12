@@ -1,11 +1,14 @@
-// u8g2 driver for SSD1306 over hardware SPI
 
 #include <hardware/spi.h>
 #include <pico/stdlib.h>
 
 #include <u8g2.h>
 
-#include "config.h"
+#include "display.h"
+
+#include "../config.h"
+
+u8g2_t u8g2;
 
 static uint8_t _byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
                         void *arg_ptr)
@@ -88,7 +91,10 @@ static uint8_t _gpio_and_delay_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
     return 1;
 }
 
-static void u8g2_Setup_ssd1306_128x64_hwspi_f(u8g2_t *u8g2, const u8g2_cb_t *rotation)
+void display_init()
 {
-    u8g2_Setup_ssd1306_128x64_noname_f(u8g2, rotation, _byte_cb, _gpio_and_delay_cb);
+    u8g2_Setup_ssd1306_128x64_noname_f(&u8g2, U8G2_R0, _byte_cb, _gpio_and_delay_cb);
+    u8g2_InitDisplay(&u8g2);
+    u8g2_ClearDisplay(&u8g2);
+    u8g2_SetPowerSave(&u8g2, 0);
 }

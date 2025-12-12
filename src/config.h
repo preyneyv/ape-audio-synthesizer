@@ -7,8 +7,19 @@
 /// DISPLAY CONFIGURATION ///
 #define DISP_SPI_PORT spi1
 #define DISP_SPI_SPEED (40 * 1000 * 1000) // 40 MHz
+
 #define DISP_RST 9
 #define DISP_DC 12
 #define DISP_SCK 10
 #define DISP_MOSI 11
 #define DISP_CS 13
+
+/// ENCODERS CONFIGURATION ///
+#define ENC_PIO pio0
+#define ENC_COUNT 2
+
+#define ENC0_PIN_AB 0
+#define ENC0_PIN_PRESS 2
+
+#define ENC1_PIN_AB 18
+#define ENC1_PIN_PRESS 20
