@@ -153,6 +153,7 @@ typedef struct audio_synth_t
 
     audio_synth_voice_t voices[AUDIO_SYNTH_VOICE_COUNT];
 
+    uint8_t next_voice;
     queue_t msg_queue; // message queue for thread-safe operation
     mutex_t mutex;     // mutex for any thread-safe operations
 } audio_synth_t;
@@ -218,3 +219,6 @@ static inline uint16_t note(char *name)
     int note_num = 60 + note + (octave - 4) * 12; // C4 = 60
     return note_num;
 }
+
+uint8_t audio_synth_next_voice(audio_synth_t *synth);
+void audio_synth_operator_set_all_config(audio_synth_t *synth, uint8_t op_idx, audio_synth_operator_config_t config);

@@ -10,6 +10,8 @@ typedef struct key_t
     uint8_t idx;
     bool pressed;
     bool edge;
+
+    uint8_t voice;
 } key_t;
 
 extern key_t g_keys[KEY_COUNT];

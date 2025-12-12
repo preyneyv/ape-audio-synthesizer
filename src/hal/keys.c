@@ -157,6 +157,11 @@ int keys_init()
 void keys_tick()
 {
     uint8_t status;
+    for (int i = 0; i < KEY_COUNT; i++)
+    {
+        key_t *key = &g_keys[i];
+        key->edge = false;
+    }
     if (read(2, &status, 1) < 0)
         return;
     if (bf_has(status, 7))

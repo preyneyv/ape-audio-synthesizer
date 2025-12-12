@@ -49,20 +49,6 @@ static void process_audio(const int32_t *input, int32_t *output, size_t num_fram
         output[i * 2] = mono_buffer[i] << 16;
         output[i * 2 + 1] = output[i * 2];
     }
-
-    // int32_t decimated_l;
-    // int32_t decimated_r;
-    // // Just copy the input to the output
-    // for (size_t i = 0; i < num_frames * 2; i += 6)
-    // {
-    //     // output[i] = input[i];
-    //     // // output[i] = 0;
-    //     decimated_l = (input[i] + input[i + 2] + input[i + 4]) / 3;
-    //     decimated_r = (input[i + 1] + input[i + 3] + input[i + 5]) / 3;
-
-    //     output[i] = output[i + 2] = output[i + 4] = decimated_l;
-    //     output[i + 1] = output[i + 3] = output[i + 5] = decimated_r;
-    // }
 }
 
 static void dma_i2s_in_handler(void)

@@ -67,8 +67,7 @@ int main()
     };
     config.freq_mult = 6;
     config.level = q1x15_f(.4f);
-    audio_synth_operator_set_config(&g_synth.voices[0].ops[0], config);
-    audio_synth_operator_set_config(&g_synth.voices[1].ops[0], config);
+    audio_synth_operator_set_all_config(&g_synth, 0, config);
 
     config = audio_synth_operator_config_default;
     config.env = (audio_synth_env_config_t){
@@ -79,25 +78,14 @@ int main()
     };
     config.level = q1x15_f(.5f);
     config.mode = AUDIO_SYNTH_OP_MODE_FREQ_MOD;
-    audio_synth_operator_set_config(&g_synth.voices[0].ops[1], config);
-    audio_synth_operator_set_config(&g_synth.voices[1].ops[1], config);
-
-    audio_synth_enqueue(&g_synth,
-                        &(audio_synth_message_t){
-                            .type = AUDIO_SYNTH_MESSAGE_NOTE_ON,
-                            .data.note_on =
-                                {
-                                    .voice = 0,
-                                    .note_number = 50,
-                                    .velocity = 100,
-                                },
-                        });
+    audio_synth_operator_set_all_config(&g_synth, 1, config);
 
     uint8_t v[2] = {0, 0};
     while (true)
     {
         encoders_tick();
         keys_tick();
+
         v[0] += g_encoders[0].delta;
         v[1] += g_encoders[1].delta;
 
@@ -138,6 +126,40 @@ int main()
             u8g2_DrawBox(&u8g2, 74, 26, 8, 8);
         else
             u8g2_DrawFrame(&u8g2, 74, 26, 8, 8);
+
+        for (int i = 0; i < KEY_NOTE_COUNT; i++)
+        {
+            key_t *key = &g_keys[i];
+            if (key->edge)
+            {
+                if (key->pressed)
+                {
+                    uint8_t voice = audio_synth_next_voice(&g_synth);
+                    key->voice = voice;
+                    audio_synth_enqueue(&g_synth,
+                                        &(audio_synth_message_t){
+                                            .type = AUDIO_SYNTH_MESSAGE_NOTE_ON,
+                                            .data.note_on =
+                                                {
+                                                    .voice = voice,
+                                                    .note_number = 60 + i,
+                                                    .velocity = 100,
+                                                },
+                                        });
+                }
+                else
+                {
+                    audio_synth_enqueue(&g_synth,
+                                        &(audio_synth_message_t){
+                                            .type = AUDIO_SYNTH_MESSAGE_NOTE_OFF,
+                                            .data.note_off =
+                                                {
+                                                    .voice = key->voice,
+                                                },
+                                        });
+                }
+            }
+        }
 
         u8g2_SendBuffer(&u8g2);
     }

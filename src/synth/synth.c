@@ -102,6 +102,15 @@ static void make_env_stage_from_cfg(audio_synth_env_state_stage_t *stage,
     }
 }
 
+void audio_synth_operator_set_all_config(audio_synth_t *synth, uint8_t op_idx, audio_synth_operator_config_t config)
+{
+    for (int voice_idx = 0; voice_idx < AUDIO_SYNTH_VOICE_COUNT; voice_idx++)
+    {
+        audio_synth_operator_t *op = &synth->voices[voice_idx].ops[op_idx];
+        audio_synth_operator_set_config(op, config);
+    }
+}
+
 // update operator values based on active config
 void audio_synth_operator_set_config(audio_synth_operator_t *op,
                                      audio_synth_operator_config_t config)
@@ -409,6 +418,13 @@ void audio_synth_handle_message(audio_synth_t *synth,
         break;
     }
     }
+}
+
+uint8_t audio_synth_next_voice(audio_synth_t *synth)
+{
+    uint8_t voice = synth->next_voice++;
+    synth->next_voice %= AUDIO_SYNTH_VOICE_COUNT;
+    return voice;
 }
 
 void audio_synth_enqueue(audio_synth_t *synth, audio_synth_message_t *msg)
