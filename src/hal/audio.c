@@ -15,11 +15,18 @@ static __attribute__((aligned(8))) pio_i2s i2s;
 
 static void process_audio(const int32_t *input, int32_t *output, size_t num_frames)
 {
+    int32_t decimated_l;
+    int32_t decimated_r;
     // Just copy the input to the output
-    for (size_t i = 0; i < num_frames * 2; i++)
+    for (size_t i = 0; i < num_frames * 2; i += 6)
     {
         // output[i] = input[i];
-        output[i] = 0;
+        // // output[i] = 0;
+        decimated_l = (input[i] + input[i + 2] + input[i + 4]) / 3;
+        decimated_r = (input[i + 1] + input[i + 3] + input[i + 5]) / 3;
+
+        output[i] = output[i + 2] = output[i + 4] = decimated_l;
+        output[i + 1] = output[i + 3] = output[i + 5] = decimated_r;
     }
 }
 
@@ -110,7 +117,7 @@ void audio_i2c_setup()
     write(0x12, 0b01111111); // +30db
 
     // adc routing
-    write(0x14, 0b11100000); // l = mic + line, r = line
+    write(0x14, 0b10100000); // l = mic + line, r = line
 
     // output mode
     write(0x16, 0b00000010); // hpmode stereo capless
