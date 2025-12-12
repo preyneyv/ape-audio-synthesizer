@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "../config.h"
 
-typedef struct encoder_state_t
+typedef struct encoder_t
 {
     uint _sm;
     uint _pin_press;
@@ -13,9 +13,9 @@ typedef struct encoder_state_t
 
     bool pressed;
     bool edge;
-} encoder_state_t;
+} encoder_t;
 
-extern encoder_state_t g_encoders[ENC_COUNT];
+extern encoder_t g_encoders[ENC_COUNT];
 
 void encoders_init();
 void encoders_tick();

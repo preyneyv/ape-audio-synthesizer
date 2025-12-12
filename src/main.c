@@ -5,6 +5,19 @@
 
 #include "hal/display.h"
 #include "hal/encoders.h"
+#include "hal/keys.h"
+
+void error_trap(const char *msg)
+{
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_SetDrawColor(&u8g2, 1);
+    u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
+    u8g2_DrawStr(&u8g2, 0, 10, "init failed:");
+    u8g2_DrawStr(&u8g2, 0, 22, msg);
+    u8g2_SendBuffer(&u8g2);
+    while (true)
+        sleep_ms(1000);
+}
 
 int main()
 {
@@ -13,12 +26,22 @@ int main()
     printf("hi\n");
 
     display_init();
+
+    u8g2_ClearBuffer(&u8g2);
+    u8g2_SetDrawColor(&u8g2, 1);
+    u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
+    u8g2_DrawStr(&u8g2, 0, 10, "Initializing...");
+    u8g2_SendBuffer(&u8g2);
+
     encoders_init();
+    if (keys_init() != 0)
+        error_trap("keys_init");
 
     uint8_t v[2] = {0, 0};
     while (true)
     {
         encoders_tick();
+        keys_tick();
         v[0] += g_encoders[0].delta;
         v[1] += g_encoders[1].delta;
 
@@ -61,7 +84,5 @@ int main()
             u8g2_DrawFrame(&u8g2, 74, 26, 8, 8);
 
         u8g2_SendBuffer(&u8g2);
-
-        sleep_ms(10);
     }
 }

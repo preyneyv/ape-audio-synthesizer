@@ -41,6 +41,7 @@ add_executable(ape-audio-synthesizer
     src/main.c
     src/hal/display.c
     src/hal/encoders.c
+    src/hal/keys.c
 )
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")
@@ -54,6 +55,7 @@ target_link_libraries(ape-audio-synthesizer
     m
     hardware_pio
     hardware_spi
+    hardware_i2c
     pico_stdlib
 )
 

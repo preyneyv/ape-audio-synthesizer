@@ -9,6 +9,7 @@
 #include "../config.h"
 
 u8g2_t u8g2;
+elm_t g_elm;
 
 static uint8_t _byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
                         void *arg_ptr)
@@ -97,4 +98,6 @@ void display_init()
     u8g2_InitDisplay(&u8g2);
     u8g2_ClearDisplay(&u8g2);
     u8g2_SetPowerSave(&u8g2, 0);
+
+    g_elm = elm_root(&u8g2, VEC2_Z);
 }
