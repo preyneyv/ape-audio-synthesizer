@@ -23,7 +23,8 @@ if (EXISTS ${picoVscode})
     include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+set(PICO_BOARD board)
+list(APPEND PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR})
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
@@ -35,7 +36,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(ape-audio-synthesizer ape-audio-synthesizer.c )
+add_executable(ape-audio-synthesizer src/main.c )
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")
 pico_set_program_version(ape-audio-synthesizer "0.1")
@@ -50,8 +51,7 @@ target_link_libraries(ape-audio-synthesizer
 
 # Add the standard include files to the build
 target_include_directories(ape-audio-synthesizer PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_LIST_DIR}/src
 )
 
 pico_add_extra_outputs(ape-audio-synthesizer)
-
