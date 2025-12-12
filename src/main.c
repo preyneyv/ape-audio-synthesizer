@@ -11,6 +11,7 @@
 #include "hal/audio.h"
 
 #include "synth/synth.h"
+#include "scenes/scenes.h"
 
 void error_trap(const char *msg)
 {
@@ -33,6 +34,17 @@ void core1_main()
     }
 }
 
+scene_t *g_current_scene;
+
+void scene_switch(scene_t *new_scene)
+{
+    if (g_current_scene && g_current_scene->exit)
+        g_current_scene->exit();
+    g_current_scene = new_scene;
+    if (g_current_scene->enter)
+        g_current_scene->enter();
+}
+
 int main()
 {
     set_sys_clock_hz(SYS_CLOCK_HZ, true);
@@ -44,6 +56,7 @@ int main()
     sleep_ms(1000);
     printf("hi\n");
 
+    // initialize all peripherals
     display_init();
 
     u8g2_ClearBuffer(&u8g2);
@@ -56,8 +69,9 @@ int main()
     if (keys_init() != 0)
         error_trap("keys_init");
 
+    // initialize synthesizer with default sine wave
     audio_synth_init(&g_synth, 48000.0f, 1000);
-    g_synth.master_level = q1x15_f(0.5f);
+    g_synth.master_level = q1x15_f(0.5f); // todo: move elsewhere
     audio_synth_operator_config_t config = audio_synth_operator_config_default;
     audio_synth_operator_set_all_config(&g_synth, 0, config);
 
@@ -65,52 +79,16 @@ int main()
     config.level = q1x15_f(0.3f);
     audio_synth_operator_set_all_config(&g_synth, 1, config);
 
-    uint8_t v[2] = {0, 0};
+    scene_switch(&scene_setup);
     while (true)
     {
         encoders_tick();
         keys_tick();
 
-        v[0] += g_encoders[0].delta;
-        v[1] += g_encoders[1].delta;
-
-        char buf[8];
-
         u8g2_ClearBuffer(&u8g2);
-        u8g2_SetDrawColor(&u8g2, 1);
-        u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
 
-        snprintf(buf, sizeof(buf), "%03d", v[0]);
-        u8g2_DrawStr(&u8g2, 0, 10, buf);
-
-        snprintf(buf, sizeof(buf), "%03d", g_encoders[0].delta);
-        u8g2_DrawStr(&u8g2, 0, 22, buf);
-
-        if (g_encoders[0].pressed)
-            u8g2_DrawBox(&u8g2, 0, 26, 8, 8);
-        else
-            u8g2_DrawFrame(&u8g2, 0, 26, 8, 8);
-
-        if (g_encoders[0].edge)
-            u8g2_DrawBox(&u8g2, 10, 26, 8, 8);
-        else
-            u8g2_DrawFrame(&u8g2, 10, 26, 8, 8);
-
-        snprintf(buf, sizeof(buf), "%03d", v[1]);
-        u8g2_DrawStr(&u8g2, 64, 10, buf);
-
-        snprintf(buf, sizeof(buf), "%03d", g_encoders[1].delta);
-        u8g2_DrawStr(&u8g2, 64, 22, buf);
-
-        if (g_encoders[1].pressed)
-            u8g2_DrawBox(&u8g2, 64, 26, 8, 8);
-        else
-            u8g2_DrawFrame(&u8g2, 64, 26, 8, 8);
-
-        if (g_encoders[1].edge)
-            u8g2_DrawBox(&u8g2, 74, 26, 8, 8);
-        else
-            u8g2_DrawFrame(&u8g2, 74, 26, 8, 8);
+        if (g_current_scene->update)
+            g_current_scene->update();
 
         for (int i = 0; i < KEY_NOTE_COUNT; i++)
         {

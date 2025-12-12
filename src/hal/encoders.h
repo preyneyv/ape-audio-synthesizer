@@ -1,12 +1,13 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "../config.h"
 
 typedef struct encoder_t
 {
-    uint _sm;
-    uint _pin_press;
+    uint32_t _sm;
+    uint32_t _pin_press;
 
     int32_t _last_value;
     int32_t delta;
