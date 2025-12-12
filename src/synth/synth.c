@@ -164,6 +164,7 @@ void audio_synth_voice_note_on(audio_synth_voice_t *voice, uint16_t note_number,
         audio_synth_operator_t *op = &voice->ops[op_idx];
         audio_synth_operator_note_on(op, note_number, velocity_ratio);
     }
+    voice->active = true;
 }
 
 static void audio_synth_operator_note_off(audio_synth_operator_t *op)
@@ -193,6 +194,7 @@ void audio_synth_voice_note_off(audio_synth_voice_t *voice)
         audio_synth_operator_t *op = &voice->ops[op_idx];
         audio_synth_operator_note_off(op);
     }
+    voice->active = false;
 }
 
 static void audio_synth_operator_panic(audio_synth_operator_t *op)
@@ -422,9 +424,14 @@ void audio_synth_handle_message(audio_synth_t *synth,
 
 uint8_t audio_synth_next_voice(audio_synth_t *synth)
 {
-    uint8_t voice = synth->next_voice++;
-    synth->next_voice %= AUDIO_SYNTH_VOICE_COUNT;
-    return voice;
+    for (int i = 0; i < AUDIO_SYNTH_VOICE_COUNT; i++)
+    {
+        if (!synth->voices[i].active)
+        {
+            return i;
+        }
+    }
+    return 0; // just steal the first one it's ok we dont really care.
 }
 
 void audio_synth_enqueue(audio_synth_t *synth, audio_synth_message_t *msg)

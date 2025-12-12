@@ -59,25 +59,10 @@ int main()
     audio_synth_init(&g_synth, 48000.0f, 1000);
     g_synth.master_level = q1x15_f(0.5f);
     audio_synth_operator_config_t config = audio_synth_operator_config_default;
-    config.env = (audio_synth_env_config_t){
-        .a = 2,
-        .d = 50,
-        .s = q1x31_f(0.f), // sustain level
-        .r = 50,
-    };
-    config.freq_mult = 6;
-    config.level = q1x15_f(.4f);
     audio_synth_operator_set_all_config(&g_synth, 0, config);
 
     config = audio_synth_operator_config_default;
-    config.env = (audio_synth_env_config_t){
-        .a = 2,
-        .d = 150,
-        .s = q1x31_f(0.f), // sustain level
-        .r = 100,
-    };
-    config.level = q1x15_f(.5f);
-    config.mode = AUDIO_SYNTH_OP_MODE_FREQ_MOD;
+    config.level = q1x15_f(0.3f);
     audio_synth_operator_set_all_config(&g_synth, 1, config);
 
     uint8_t v[2] = {0, 0};
@@ -142,7 +127,7 @@ int main()
                                             .data.note_on =
                                                 {
                                                     .voice = voice,
-                                                    .note_number = 60 + i,
+                                                    .note_number = 72 + i,
                                                     .velocity = 100,
                                                 },
                                         });

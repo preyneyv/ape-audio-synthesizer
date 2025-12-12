@@ -140,6 +140,7 @@ typedef struct audio_synth_operator_t
 typedef struct audio_synth_voice_t
 {
     audio_synth_operator_t ops[AUDIO_SYNTH_OPERATOR_COUNT];
+    bool active;
     audio_synth_t *synth;
 } audio_synth_voice_t;
 
