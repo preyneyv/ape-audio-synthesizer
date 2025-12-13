@@ -114,11 +114,6 @@ void audio_i2c_setup()
     write(0x07, 0b00000000); // infer clock
     write(0x08, 0b00010000); // slave mode, I2S compat
 
-    // write(0x05, 0b00010000);
-    // write(0x06, 0b00100000);
-    // write(0x07, 0b11000101);
-    // write(0x08, 0b10000000);
-
     // write(0x0b, 0b11000001);
     write(0x0b, 0b00000000);
     // dac level
@@ -127,8 +122,8 @@ void audio_i2c_setup()
     write(0x0d, 0b00110011);
 
     // line input level
-    write(0x0e, 0b01001100);
-    write(0x0f, 0b01001100);
+    write(0x0e, 0b00001100);
+    write(0x0f, 0b00001100);
 
     // playback volume
     write(0x10, 0b00001001); // -6db
@@ -138,13 +133,13 @@ void audio_i2c_setup()
     write(0x12, 0b01111111); // +30db
 
     // adc routing
-    write(0x14, 0b10100000); // l = mic + line, r = line
+    write(0x14, 0b01100000); // l = mic, r = line
 
     // output mode
     write(0x16, 0b00000010); // hpmode stereo capless
 
     // wake up with all peripherals
-    write(0x17, 0b11101111);
+    write(0x17, 0b11001111);
 }
 
 void audio_init()

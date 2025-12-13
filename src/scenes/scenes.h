@@ -3,7 +3,7 @@
 typedef struct scene_t
 {
     void (*enter)(void);
-    void (*exit)(void);
+    void (*leave)(void);
     void (*update)(void);
 } scene_t;
 

@@ -48,6 +48,7 @@ add_executable(ape-audio-synthesizer
     src/scenes/play.c
     src/scenes/setup.c
     src/tracker/tracker.c
+    src/tracker/instruments.c
 )
 
 pico_set_program_name(ape-audio-synthesizer "ape-audio-synthesizer")

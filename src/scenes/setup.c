@@ -13,7 +13,6 @@ static void enter()
 
 static void update()
 {
-    u8g2_ClearBuffer(&u8g2);
     u8g2_SetDrawColor(&u8g2, 1);
     u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
     u8g2_DrawStr(&u8g2, 0, 10, "TEMPO");
@@ -23,8 +22,6 @@ static void update()
     u8g2_SetFont(&u8g2, u8g2_font_10x20_tr);
     u8g2_DrawStr(&u8g2, 0, 30, tempo_str);
 
-    u8g2_SendBuffer(&u8g2);
-
     g_tracker.tempo += g_encoders[0].delta;
     if (g_tracker.tempo < 80)
         g_tracker.tempo = 80;
@@ -33,17 +30,16 @@ static void update()
 
     if (g_encoders[0].pressed)
     {
-        tracker_init();
         scene_switch(&scene_play);
     }
 }
 
-static void exit()
+static void leave()
 {
 }
 
 scene_t scene_setup = {
     .enter = enter,
     .update = update,
-    .exit = exit,
+    .leave = leave,
 };

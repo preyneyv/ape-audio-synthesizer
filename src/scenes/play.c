@@ -1,25 +1,33 @@
 #include "scenes.h"
 #include "hal/display.h"
+#include "hal/encoders.h"
+#include "tracker/tracker.h"
 
 static void enter()
 {
+    // lock setup values
+    tracker_enter_play();
 }
 
 static void update()
 {
-    u8g2_ClearBuffer(&u8g2);
     u8g2_SetDrawColor(&u8g2, 1);
     u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
-    u8g2_DrawStr(&u8g2, 0, 10, "Play Scene");
-    u8g2_SendBuffer(&u8g2);
+    u8g2_DrawStr(&u8g2, 0, 10, "INSTRUMENT");
+
+    instrument_t *inst = &g_instruments[g_tracker.instrument_idx];
+    u8g2_SetFont(&u8g2, u8g2_font_10x20_tr);
+    u8g2_DrawStr(&u8g2, 0, 30, inst->name);
+
+    tracker_change_instrument(g_encoders[0].delta);
 }
 
-static void exit()
+static void leave()
 {
 }
 
 scene_t scene_play = {
     .enter = enter,
     .update = update,
-    .exit = exit,
+    .leave = leave,
 };

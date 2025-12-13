@@ -12,6 +12,7 @@
 
 #include "synth/synth.h"
 #include "scenes/scenes.h"
+#include "tracker/tracker.h"
 
 void error_trap(const char *msg)
 {
@@ -38,8 +39,8 @@ scene_t *g_current_scene;
 
 void scene_switch(scene_t *new_scene)
 {
-    if (g_current_scene && g_current_scene->exit)
-        g_current_scene->exit();
+    if (g_current_scene && g_current_scene->leave)
+        g_current_scene->leave();
     g_current_scene = new_scene;
     if (g_current_scene->enter)
         g_current_scene->enter();
@@ -71,58 +72,25 @@ int main()
 
     // initialize synthesizer with default sine wave
     audio_synth_init(&g_synth, 48000.0f, 1000);
-    g_synth.master_level = q1x15_f(0.5f); // todo: move elsewhere
-    audio_synth_operator_config_t config = audio_synth_operator_config_default;
-    audio_synth_operator_set_all_config(&g_synth, 0, config);
+    tracker_init();
+    // audio_synth_operator_config_t config = audio_synth_operator_config_default;
+    // audio_synth_operator_set_all_config(&g_synth, 0, config);
 
-    config = audio_synth_operator_config_default;
-    config.level = q1x15_f(0.3f);
-    audio_synth_operator_set_all_config(&g_synth, 1, config);
+    // config = audio_synth_operator_config_default;
+    // config.level = q1x15_f(0.3f);
+    // audio_synth_operator_set_all_config(&g_synth, 1, config);
 
     scene_switch(&scene_setup);
     while (true)
     {
         encoders_tick();
         keys_tick();
+        tracker_tick();
 
         u8g2_ClearBuffer(&u8g2);
 
         if (g_current_scene->update)
             g_current_scene->update();
-
-        for (int i = 0; i < KEY_NOTE_COUNT; i++)
-        {
-            key_t *key = &g_keys[i];
-            if (key->edge)
-            {
-                if (key->pressed)
-                {
-                    uint8_t voice = audio_synth_next_voice(&g_synth);
-                    key->voice = voice;
-                    audio_synth_enqueue(&g_synth,
-                                        &(audio_synth_message_t){
-                                            .type = AUDIO_SYNTH_MESSAGE_NOTE_ON,
-                                            .data.note_on =
-                                                {
-                                                    .voice = voice,
-                                                    .note_number = 72 + i,
-                                                    .velocity = 100,
-                                                },
-                                        });
-                }
-                else
-                {
-                    audio_synth_enqueue(&g_synth,
-                                        &(audio_synth_message_t){
-                                            .type = AUDIO_SYNTH_MESSAGE_NOTE_OFF,
-                                            .data.note_off =
-                                                {
-                                                    .voice = key->voice,
-                                                },
-                                        });
-                }
-            }
-        }
 
         u8g2_SendBuffer(&u8g2);
     }
