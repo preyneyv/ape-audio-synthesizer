@@ -53,6 +53,11 @@ static void update()
     {
         tracker_toggle_record();
     }
+
+    if (g_encoders[1].pressed && g_encoders[1].edge)
+    {
+        tracker_toggle_play();
+    }
 }
 
 static void leave()

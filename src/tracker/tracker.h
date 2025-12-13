@@ -20,6 +20,7 @@ typedef struct tracker_t
     uint32_t buffer_pos;
     bool initialized;
     bool record;
+    bool play;
 } tracker_t;
 
 extern tracker_t g_tracker;
@@ -32,3 +33,4 @@ void tracker_enter_play();
 void tracker_process_audio(const int32_t *input, int32_t *output);
 void tracker_change_octave(int8_t delta);
 void tracker_toggle_record();
+void tracker_toggle_play();

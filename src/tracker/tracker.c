@@ -13,6 +13,7 @@ void tracker_init()
     g_tracker.octave = 4;
     g_tracker.tempo = 120;
     g_tracker.initialized = false;
+    g_tracker.play = false;
     tracker_set_instrument(2);
 }
 
@@ -68,6 +69,14 @@ void tracker_enter_play()
     // calculate end pointer using bpm at 16khz
     g_tracker.buffer_end = (BUFFER_SAMPLE_RATE * 60 * BUFFER_MAX_DURATION_SECONDS) / g_tracker.tempo / 2;
     g_tracker.initialized = true;
+    g_tracker.play = true;
+}
+
+void tracker_toggle_play()
+{
+    g_tracker.play = !g_tracker.play;
+    if (!g_tracker.play)
+        g_tracker.record = false;
 }
 
 void tracker_set_instrument(uint8_t instrument_idx)
@@ -107,6 +116,10 @@ void tracker_change_instrument(int8_t delta)
 void tracker_toggle_record()
 {
     g_tracker.record = !g_tracker.record;
+    if (g_tracker.record)
+    {
+        g_tracker.play = true;
+    }
 }
 
 void tracker_change_octave(int8_t delta)
@@ -177,14 +190,23 @@ void tracker_process_audio(const int32_t *input, int32_t *output)
         // Pull samples from the tracker buffer
         for (size_t i = 0; i < TRACKER_BUFFER_FRAMES; i++)
         {
-            uint32_t b_idx = g_tracker.buffer_pos++;
-            if (g_tracker.buffer_pos >= g_tracker.buffer_end)
-                g_tracker.buffer_pos = 0;
+            uint32_t b_idx;
+            if (g_tracker.play)
+            {
 
-            out_buffer_16khz[i] = g_tracker.buffer[b_idx];
+                b_idx = g_tracker.buffer_pos++;
+                if (g_tracker.buffer_pos >= g_tracker.buffer_end)
+                    g_tracker.buffer_pos = 0;
+
+                out_buffer_16khz[i] = g_tracker.buffer[b_idx];
+            }
+            else
+            {
+                out_buffer_16khz[i] = 0;
+            }
             if (mix_to_out)
                 out_buffer_16khz[i] += mix_in_16khz[i];
-            if (g_tracker.record)
+            if (g_tracker.record && g_tracker.play)
             {
                 g_tracker.buffer[b_idx] = out_buffer_16khz[i];
                 if (!mix_to_out)
