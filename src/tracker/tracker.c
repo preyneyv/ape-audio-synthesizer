@@ -8,6 +8,7 @@ tracker_t g_tracker;
 void tracker_init()
 {
     instruments_init();
+    g_tracker.synth_level = 0.5f;
     g_synth.master_level = q1x15_f(0.5f); // todo: move elsewhere
 
     g_tracker.octave = 4;
@@ -62,6 +63,22 @@ void tracker_tick()
     {
         tracker_change_octave(1);
     }
+}
+
+void tracker_set_level(float level)
+{
+    g_tracker.synth_level = level;
+    g_synth.master_level = q1x15_f(level);
+}
+
+void tracker_change_level(float delta)
+{
+    float new_level = g_tracker.synth_level + delta;
+    if (new_level < 0.0f)
+        new_level = 0.0f;
+    else if (new_level > 1.0f)
+        new_level = 1.0f;
+    tracker_set_level(new_level);
 }
 
 void tracker_enter_play()

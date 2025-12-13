@@ -21,6 +21,7 @@ typedef struct tracker_t
     bool initialized;
     bool record;
     bool play;
+    float synth_level;
 } tracker_t;
 
 extern tracker_t g_tracker;
@@ -34,3 +35,5 @@ void tracker_process_audio(const int32_t *input, int32_t *output);
 void tracker_change_octave(int8_t delta);
 void tracker_toggle_record();
 void tracker_toggle_play();
+void tracker_set_level(float level);
+void tracker_change_level(float delta);

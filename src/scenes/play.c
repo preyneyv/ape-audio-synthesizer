@@ -18,9 +18,15 @@ static void update()
     u8g2_SetFont(&u8g2, u8g2_font_6x10_tf);
     u8g2_DrawStr(&u8g2, 0, 10, "INSTRUMENT");
 
-    char octave_str[32];
-    snprintf(octave_str, sizeof(octave_str), "C%d", g_tracker.octave);
-    u8g2_DrawStr(&u8g2, 114, 10, octave_str);
+    char str_buf[32];
+    if (inst->source == INSTR_SRC_SYNTH)
+    {
+        snprintf(str_buf, sizeof(str_buf), "%d", (int)(g_tracker.synth_level * 100));
+        u8g2_DrawStr(&u8g2, 90, 10, str_buf);
+
+        snprintf(str_buf, sizeof(str_buf), "C%d", g_tracker.octave);
+        u8g2_DrawStr(&u8g2, 114, 10, str_buf);
+    }
 
     if (g_tracker.record)
     {
@@ -54,6 +60,10 @@ static void update()
         tracker_toggle_record();
     }
 
+    if (g_encoders[1].delta != 0)
+    {
+        tracker_change_level(g_encoders[1].delta * 0.05f);
+    }
     if (g_encoders[1].pressed && g_encoders[1].edge)
     {
         tracker_toggle_play();
