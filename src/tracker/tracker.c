@@ -13,7 +13,7 @@ void tracker_init()
     g_tracker.octave = 4;
     g_tracker.tempo = 120;
     g_tracker.initialized = false;
-    tracker_set_instrument(1);
+    tracker_set_instrument(2);
 }
 
 void tracker_tick()

@@ -113,7 +113,7 @@ int keys_init_controller()
     // Set neg threshold
     uint8_t thresholds[16];
     for (int i = 0; i < 16; i++)
-        thresholds[i] = 12;
+        thresholds[i] = 7;
     if ((ret = write(38, thresholds, 16)) < 0)
         return ret;
 
