@@ -1,5 +1,6 @@
 #include "tracker.h"
 #include "hal/keys.h"
+#include "../config.h"
 
 tracker_t g_tracker;
 
@@ -49,10 +50,21 @@ void tracker_tick()
             }
         }
     }
+
+    if (g_keys[KEY_OCT_DN].edge && g_keys[KEY_OCT_DN].pressed)
+    {
+        tracker_change_octave(-1);
+    }
+    if (g_keys[KEY_OCT_UP].edge && g_keys[KEY_OCT_UP].pressed)
+    {
+        tracker_change_octave(1);
+    }
 }
 
 void tracker_enter_play()
 {
+    // calculate end pointer using bpm at 16khz
+    g_tracker.buffer_end = (BUFFER_SAMPLE_RATE * 60 * BUFFER_MAX_DURATION_SECONDS) / g_tracker.tempo;
 }
 
 void tracker_set_instrument(uint8_t instrument_idx)
@@ -86,4 +98,55 @@ void tracker_change_instrument(int8_t delta)
         new_idx = 0;
 
     tracker_set_instrument((uint8_t)new_idx);
+}
+
+void tracker_change_octave(int8_t delta)
+{
+    if (delta == 0)
+        return;
+    int8_t new_octave = (int8_t)g_tracker.octave + delta;
+    if (new_octave < 2)
+        new_octave = 2;
+    else if (new_octave > 7)
+        new_octave = 7;
+
+    g_tracker.octave = (uint8_t)new_octave;
+}
+
+static void decimate_48_to_16khz(const int32_t *src, int32_t *dst, size_t num_dst_frames)
+{
+    // simple decimation by averaging every 3 samples
+    for (size_t i = 0; i < num_dst_frames; i++)
+    {
+        dst[i] = (src[i * 3] + src[i * 3 + 1] + src[i * 3 + 2]) / 3;
+    }
+}
+
+static void inflate_16_to_48khz(const int32_t *src, int32_t *dst, size_t num_src_frames)
+{
+    // simple inflation by repeating each sample 3 times
+    for (size_t i = 0; i < num_src_frames; i++)
+    {
+        dst[i * 3] = src[i];
+        dst[i * 3 + 1] = src[i];
+        dst[i * 3 + 2] = src[i];
+    }
+}
+
+void tracker_process_audio(const int32_t *input, int32_t *output)
+{
+    // synth buffer
+    static int32_t buffer_48khz[AUDIO_BUFFER_FRAMES];
+    static int32_t synth_buffer_16khz[TRACKER_BUFFER_FRAMES];
+
+    audio_synth_fill_buffer(&g_synth, buffer_48khz, AUDIO_BUFFER_FRAMES);
+    decimate_48_to_16khz(buffer_48khz, synth_buffer_16khz, TRACKER_BUFFER_FRAMES);
+    inflate_16_to_48khz(synth_buffer_16khz, buffer_48khz, TRACKER_BUFFER_FRAMES);
+
+    for (size_t i = 0; i < AUDIO_BUFFER_FRAMES; i++)
+    {
+        // stereo output from mono buffer
+        output[i * 2] = buffer_48khz[i] << 16;
+        output[i * 2 + 1] = output[i * 2];
+    }
 }

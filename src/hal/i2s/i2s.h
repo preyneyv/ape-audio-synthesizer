@@ -22,11 +22,10 @@
 #include <stdio.h>
 #include "hardware/pio.h"
 
+#include "../../config.h"
+
 #ifndef I2S_TEST_I2S_H
 #define I2S_TEST_I2S_H
-
-#define AUDIO_BUFFER_FRAMES 48
-#define STEREO_BUFFER_SIZE AUDIO_BUFFER_FRAMES * 2 // roughly 1ms, 48 L + R words
 
 typedef struct i2s_config
 {
