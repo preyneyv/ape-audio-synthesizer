@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "tracker.h"
 #include "hal/keys.h"
 #include "../config.h"
@@ -71,6 +72,7 @@ void tracker_enter_play()
 
 void tracker_set_instrument(uint8_t instrument_idx)
 {
+    g_tracker.record = false;
     g_tracker.instrument_idx = instrument_idx;
     instrument_t *instr = &g_instruments[g_tracker.instrument_idx];
     if (instr->source == INSTR_SRC_SYNTH)
@@ -140,15 +142,35 @@ static void inflate_16_to_48khz(const int32_t *src, int32_t *dst, size_t num_src
     }
 }
 
+static inline void extract_input_channel(const int32_t *input, int32_t *output, uint8_t offset)
+{
+    for (size_t i = 0; i < AUDIO_BUFFER_FRAMES; i++)
+    {
+        output[i] = input[i * 2 + offset] >> 16;
+    }
+}
+
 void tracker_process_audio(const int32_t *input, int32_t *output)
 {
-    // synth buffer
     static int32_t buffer_48khz[AUDIO_BUFFER_FRAMES];
-    static int32_t synth_buffer_16khz[TRACKER_BUFFER_FRAMES];
+    static int32_t mix_in_16khz[TRACKER_BUFFER_FRAMES];
     static int32_t out_buffer_16khz[TRACKER_BUFFER_FRAMES];
 
-    audio_synth_fill_buffer(&g_synth, buffer_48khz, AUDIO_BUFFER_FRAMES);
-    decimate_48_to_16khz(buffer_48khz, synth_buffer_16khz, TRACKER_BUFFER_FRAMES);
+    bool mix_to_out = false;
+    switch (g_instruments[g_tracker.instrument_idx].source)
+    {
+    case INSTR_SRC_SYNTH:
+        mix_to_out = true;
+        audio_synth_fill_buffer(&g_synth, buffer_48khz, AUDIO_BUFFER_FRAMES);
+        break;
+    case INSTR_SRC_LINE:
+        extract_input_channel(input, buffer_48khz, 0); // left is line input
+        break;
+    case INSTR_SRC_MIC:
+        extract_input_channel(input, buffer_48khz, 1); // right is mic input
+        break;
+    };
+    decimate_48_to_16khz(buffer_48khz, mix_in_16khz, TRACKER_BUFFER_FRAMES);
 
     if (g_tracker.initialized)
     {
@@ -159,9 +181,15 @@ void tracker_process_audio(const int32_t *input, int32_t *output)
             if (g_tracker.buffer_pos >= g_tracker.buffer_end)
                 g_tracker.buffer_pos = 0;
 
-            out_buffer_16khz[i] = g_tracker.buffer[b_idx] + synth_buffer_16khz[i];
-            if (g_tracker.record) // todo: record flag
+            out_buffer_16khz[i] = g_tracker.buffer[b_idx];
+            if (mix_to_out)
+                out_buffer_16khz[i] += mix_in_16khz[i];
+            if (g_tracker.record)
+            {
                 g_tracker.buffer[b_idx] = out_buffer_16khz[i];
+                if (!mix_to_out)
+                    g_tracker.buffer[b_idx] += mix_in_16khz[i];
+            }
         }
     }
 
@@ -173,19 +201,3 @@ void tracker_process_audio(const int32_t *input, int32_t *output)
         output[i * 2 + 1] = output[i * 2];
     }
 }
-// {
-//     // synth buffer
-//     static int32_t buffer_48khz[AUDIO_BUFFER_FRAMES];
-//     static int32_t synth_buffer_16khz[TRACKER_BUFFER_FRAMES];
-
-//     audio_synth_fill_buffer(&g_synth, buffer_48khz, AUDIO_BUFFER_FRAMES);
-//     decimate_48_to_16khz(buffer_48khz, synth_buffer_16khz, TRACKER_BUFFER_FRAMES);
-//     inflate_16_to_48khz(synth_buffer_16khz, buffer_48khz, TRACKER_BUFFER_FRAMES);
-
-//     for (size_t i = 0; i < AUDIO_BUFFER_FRAMES; i++)
-//     {
-//         // stereo output from mono buffer
-//         output[i * 2] = buffer_48khz[i] << 16;
-//         output[i * 2 + 1] = output[i * 2];
-//     }
-// }
